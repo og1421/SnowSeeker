@@ -8,12 +8,22 @@
 import Foundation
 
 class Favorites: ObservableObject {
-    private var resorts: Set<String>
-    private let saveKey = "Favorites"
+    private var resorts = Set<String>()
+    private let saveKey = "Favorites.json"
     
     init(){
-        //load our save data
-        resorts = []
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let url = documentsDirectory.appendingPathComponent(saveKey)
+        
+        guard let data = try? Data(contentsOf: url) else { return }
+        
+        do {
+            let decodedData = try JSONDecoder().decode([String].self, from: data)
+            resorts = Set(decodedData)
+        } catch {
+            print("Error while decoding file \(error.localizedDescription)")
+            resorts = []
+        }
     }
     
     func contains(_ resort: Resort) -> Bool {
@@ -33,6 +43,17 @@ class Favorites: ObservableObject {
     }
     
     func save()  {
-        //write our data
+        guard let data = try? JSONEncoder().encode(resorts) else { return }
+        
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        
+        let url = documentsDirectory.appendingPathComponent(saveKey)
+        
+        do {
+            try data.write(to: url)
+        } catch {
+            print("Error while saving the file \(error.localizedDescription)")
+        }
+        
     }
 }
